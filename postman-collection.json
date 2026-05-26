@@ -1,0 +1,266 @@
+{
+  "info": {
+    "name": "Order Tracker API",
+    "description": "Complete API collection for Order Tracker microservices",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "Create Product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"iPhone 15\",\n  \"description\": \"Latest Apple smartphone with advanced features\",\n  \"price\": 999,\n  \"stock\": 100\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/products",
+              "host": ["{{base_url}}"],
+              "path": ["products"]
+            },
+            "description": "Create a new product"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"iPhone 15\",\n  \"description\": \"Latest Apple smartphone\",\n  \"price\": 999,\n  \"stock\": 100\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/products",
+                  "host": ["{{base_url}}"],
+                  "path": ["products"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"_id\": \"507f1f77bcf86cd799439011\",\n  \"name\": \"iPhone 15\",\n  \"description\": \"Latest Apple smartphone\",\n  \"price\": 999,\n  \"stock\": 100,\n  \"createdAt\": \"2026-05-26T21:00:00Z\",\n  \"updatedAt\": \"2026-05-26T21:00:00Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get All Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/products",
+              "host": ["{{base_url}}"],
+              "path": ["products"]
+            },
+            "description": "Retrieve all products (cached)"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/products",
+                  "host": ["{{base_url}}"],
+                  "path": ["products"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "[\n  {\n    \"_id\": \"507f1f77bcf86cd799439011\",\n    \"name\": \"iPhone 15\",\n    \"description\": \"Latest Apple smartphone\",\n    \"price\": 999,\n    \"stock\": 100,\n    \"createdAt\": \"2026-05-26T21:00:00Z\",\n    \"updatedAt\": \"2026-05-26T21:00:00Z\"\n  },\n  {\n    \"_id\": \"507f1f77bcf86cd799439012\",\n    \"name\": \"MacBook Pro\",\n    \"description\": \"Powerful laptop for professionals\",\n    \"price\": 2499,\n    \"stock\": 50,\n    \"createdAt\": \"2026-05-26T21:01:00Z\",\n    \"updatedAt\": \"2026-05-26T21:01:00Z\"\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Get Product by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/products/507f1f77bcf86cd799439011",
+              "host": ["{{base_url}}"],
+              "path": ["products", "507f1f77bcf86cd799439011"]
+            },
+            "description": "Get a specific product by ID (cached)"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/products/507f1f77bcf86cd799439011",
+                  "host": ["{{base_url}}"],
+                  "path": ["products", "507f1f77bcf86cd799439011"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"_id\": \"507f1f77bcf86cd799439011\",\n  \"name\": \"iPhone 15\",\n  \"description\": \"Latest Apple smartphone\",\n  \"price\": 999,\n  \"stock\": 100,\n  \"createdAt\": \"2026-05-26T21:00:00Z\",\n  \"updatedAt\": \"2026-05-26T21:00:00Z\"\n}"
+            },
+            {
+              "name": "Not Found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/products/invalid_id",
+                  "host": ["{{base_url}}"],
+                  "path": ["products", "invalid_id"]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "body": "{\n  \"statusCode\": 404,\n  \"message\": \"Product invalid_id not found\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Create Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": \"cust_12345\",\n  \"items\": [\n    {\n      \"productId\": \"507f1f77bcf86cd799439011\",\n      \"quantity\": 2\n    },\n    {\n      \"productId\": \"507f1f77bcf86cd799439012\",\n      \"quantity\": 1\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/orders",
+              "host": ["{{base_url}}"],
+              "path": ["orders"]
+            },
+            "description": "Create a new order. Automatically reduces product stock and publishes RabbitMQ event"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"customerId\": \"cust_12345\",\n  \"items\": [\n    {\n      \"productId\": \"507f1f77bcf86cd799439011\",\n      \"quantity\": 2\n    }\n  ]\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/orders",
+                  "host": ["{{base_url}}"],
+                  "path": ["orders"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"_id\": \"507f2f77bcf86cd799439012\",\n  \"customerId\": \"cust_12345\",\n  \"items\": [\n    {\n      \"productId\": \"507f1f77bcf86cd799439011\",\n      \"quantity\": 2,\n      \"_id\": \"507f2f77bcf86cd799439013\"\n    }\n  ],\n  \"totalAmount\": 1998,\n  \"status\": \"pending\",\n  \"createdAt\": \"2026-05-26T21:02:00Z\",\n  \"updatedAt\": \"2026-05-26T21:02:00Z\"\n}"
+            },
+            {
+              "name": "Insufficient Stock",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"customerId\": \"cust_12345\",\n  \"items\": [\n    {\n      \"productId\": \"507f1f77bcf86cd799439011\",\n      \"quantity\": 9999\n    }\n  ]\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/orders",
+                  "host": ["{{base_url}}"],
+                  "path": ["orders"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"statusCode\": 400,\n  \"message\": \"Insufficient stock for product 507f1f77bcf86cd799439011. Available: 98, Requested: 9999\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get All Orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/orders",
+              "host": ["{{base_url}}"],
+              "path": ["orders"]
+            },
+            "description": "Retrieve all orders"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/orders",
+                  "host": ["{{base_url}}"],
+                  "path": ["orders"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "[\n  {\n    \"_id\": \"507f2f77bcf86cd799439012\",\n    \"customerId\": \"cust_12345\",\n    \"items\": [\n      {\n        \"productId\": \"507f1f77bcf86cd799439011\",\n        \"quantity\": 2,\n        \"_id\": \"507f2f77bcf86cd799439013\"\n      }\n    ],\n    \"totalAmount\": 1998,\n    \"status\": \"pending\",\n    \"createdAt\": \"2026-05-26T21:02:00Z\",\n    \"updatedAt\": \"2026-05-26T21:02:00Z\"\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Get Order by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/orders/507f2f77bcf86cd799439012",
+              "host": ["{{base_url}}"],
+              "path": ["orders", "507f2f77bcf86cd799439012"]
+            },
+            "description": "Get a specific order by ID"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/orders/507f2f77bcf86cd799439012",
+                  "host": ["{{base_url}}"],
+                  "path": ["orders", "507f2f77bcf86cd799439012"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"_id\": \"507f2f77bcf86cd799439012\",\n  \"customerId\": \"cust_12345\",\n  \"items\": [\n    {\n      \"productId\": \"507f1f77bcf86cd799439011\",\n      \"quantity\": 2,\n      \"_id\": \"507f2f77bcf86cd799439013\"\n    }\n  ],\n  \"totalAmount\": 1998,\n  \"status\": \"pending\",\n  \"createdAt\": \"2026-05-26T21:02:00Z\",\n  \"updatedAt\": \"2026-05-26T21:02:00Z\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ]
+}
