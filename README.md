@@ -1,98 +1,375 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Order Tracker System — NestJS Microservices Monorepo
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A production-style NestJS monorepo implementing an Order Tracker System using microservices architecture.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## Architecture Overview
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        CLIENT (HTTP)                             │
+└─────────────────────────┬───────────────────────────────────────┘
+                          │ REST API
+                          ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    API GATEWAY :3000                             │
+│              (NestJS HTTP + Pino Logger)                         │
+│         No DB access. Routes via TCP only.                       │
+└──────────────┬──────────────────────┬───────────────────────────┘
+               │ TCP                  │ TCP
+               ▼                      ▼
+┌──────────────────────┐  ┌───────────────────────────────────────┐
+│  PRODUCT SERVICE     │  │         ORDER SERVICE :3002            │
+│      :3001           │◄─┤  (TCP + RabbitMQ Publisher)           │
+│  MongoDB + Redis     │  │  MongoDB                               │
+│  Cache L1+L2         │  │  Calls Product Service via TCP         │
+└──────────────────────┘  └──────────────────┬──────────────────  ┘
+                                             │ RabbitMQ publish
+                                             ▼
+                          ┌─────────────────────────────────────── ┐
+                          │        WORKER SERVICE                   │
+                          │  (RabbitMQ Consumer)                    │
+                          │  Handles: notifications, analytics      │
+                          └─────────────────────────────────────── ┘
 
-## Project setup
-
-```bash
-$ npm install
+Infrastructure:
+  MongoDB  :27017   — data persistence
+  Redis    :6379    — L2 cache (product list + by id)
+  RabbitMQ :5672    — async event bus
+             :15672  — management UI
 ```
 
-## Compile and run the project
+---
 
-```bash
-# development
-$ npm run start
+## Project Structure
 
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+```
+order-tracker/
+├── apps/
+│   ├── api-gateway/           # HTTP REST API (port 3000)
+│   │   └── src/
+│   │       ├── products/      # Products controller
+│   │       ├── orders/        # Orders controller
+│   │       ├── api-gateway.module.ts
+│   │       └── main.ts
+│   │
+│   ├── product-service/       # TCP Microservice (port 3001)
+│   │   └── src/
+│   │       ├── schemas/       # MongoDB schema
+│   │       ├── product.controller.ts
+│   │       ├── product.service.ts
+│   │       ├── product-service.module.ts
+│   │       └── main.ts
+│   │
+│   ├── order-service/         # TCP Microservice (port 3002)
+│   │   └── src/
+│   │       ├── schemas/       # MongoDB schema
+│   │       ├── order.controller.ts
+│   │       ├── order.service.ts
+│   │       ├── order-service.module.ts
+│   │       └── main.ts
+│   │
+│   └── worker-service/        # RabbitMQ Consumer
+│       └── src/
+│           ├── worker.controller.ts
+│           ├── worker.service.ts
+│           ├── worker-service.module.ts
+│           └── main.ts
+│
+├── libs/
+│   └── common/                # Shared library
+│       └── src/
+│           ├── dto/
+│           │   ├── product.dto.ts    # CreateProductDto, ReduceStockDto
+│           │   └── order.dto.ts      # CreateOrderDto, OrderItemDto
+│           ├── interfaces/
+│           │   └── index.ts          # IProduct, IOrder, OrderCreatedEvent...
+│           ├── constants/
+│           │   └── index.ts          # TCP patterns, queue names, cache keys
+│           └── index.ts              # Barrel export
+│
+├── docker-compose.yml
+├── nest-cli.json
+├── tsconfig.json
+├── package.json
+└── .env.example
 ```
 
-## Run tests
+---
+
+## Prerequisites
+
+- Node.js 20+
+- Docker & Docker Compose
+- npm
+
+---
+
+## Step 1 — Install Dependencies
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npm install
 ```
 
-## Deployment
+---
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Step 2 — Start Infrastructure (Docker)
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+# Start MongoDB, Redis, RabbitMQ
+docker-compose up mongodb redis rabbitmq -d
+
+# Verify health
+docker-compose ps
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Services available:
 
-## Resources
+- **MongoDB**: `mongodb://root:rootpassword@localhost:27017`
+- **Redis**: `redis://localhost:6379`
+- **RabbitMQ**: `amqp://guest:guest@localhost:5672`
+- **RabbitMQ UI**: http://localhost:15672 (guest/guest)
 
-Check out a few resources that may come in handy when working with NestJS:
+---
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+## Step 3 — Configure Environment
 
-## Support
+```bash
+cp .env.example .env
+# Edit .env if needed (defaults work with docker-compose)
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+---
 
-## Stay in touch
+## Step 4 — Run Services (Development)
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+Open 4 terminals:
 
-## License
+```bash
+# Terminal 1 — Product Service
+npm run start:product-service:dev
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+# Terminal 2 — Order Service
+npm run start:order-service:dev
+
+# Terminal 3 — Worker Service
+npm run start:worker-service:dev
+
+# Terminal 4 — API Gateway
+npm run start:api-gateway:dev
+```
+
+---
+
+## Step 5 — Run with Docker Compose (Production)
+
+```bash
+docker-compose up --build
+```
+
+---
+
+## API Reference
+
+Base URL: `http://localhost:3000/api/v1`
+
+### Products
+
+#### Create Product
+
+```http
+POST /api/v1/products
+Content-Type: application/json
+
+{
+  "name": "Mechanical Keyboard",
+  "description": "TKL 80% keyboard with Cherry MX switches",
+  "price": 149.99,
+  "stock": 50
+}
+```
+
+#### Get All Products
+
+```http
+GET /api/v1/products
+```
+
+#### Get Product by ID
+
+```http
+GET /api/v1/products/:id
+```
+
+### Orders
+
+#### Create Order
+
+```http
+POST /api/v1/orders
+Content-Type: application/json
+
+{
+  "customerId": "customer_abc123",
+  "items": [
+    { "productId": "<product-id>", "quantity": 2 },
+    { "productId": "<product-id-2>", "quantity": 1 }
+  ]
+}
+```
+
+#### Get All Orders
+
+```http
+GET /api/v1/orders
+```
+
+#### Get Order by ID
+
+```http
+GET /api/v1/orders/:id
+```
+
+---
+
+## Order Flow (Step-by-step)
+
+```
+POST /api/v1/orders
+        │
+        ▼
+  API Gateway
+  (HTTP → TCP)
+        │
+        ▼
+  Order Service ──── TCP ──►  Product Service
+  Step 1: Validate stock      (findOne per item)
+  Step 2: Reduce stock ──────► (reduceStock + cache invalidation)
+  Step 3: Save order (MongoDB)
+  Step 4: Emit "order.created" ──► RabbitMQ
+        │
+        ▼
+  Worker Service (RabbitMQ Consumer)
+  - Send notification (simulated)
+  - Track analytics (simulated)
+  - ACK message
+```
+
+---
+
+## Caching Strategy (Redis + In-Memory L1)
+
+Two-layer cache implemented in Product Service:
+
+| Layer | Backend       | TTL     | Purpose                  |
+| ----- | ------------- | ------- | ------------------------ |
+| L1    | In-memory LRU | 30s     | Ultra-fast local cache   |
+| L2    | Redis         | 60-120s | Shared distributed cache |
+
+Cache keys:
+
+- `products:all` — all products list (TTL: 60s)
+- `products:{id}` — single product (TTL: 120s)
+
+Cache is **invalidated** on:
+
+- Product create → `products:all` deleted
+- Stock reduction → `products:{id}` + `products:all` deleted
+
+---
+
+## Logging (Pino)
+
+All services use structured JSON logging via `nestjs-pino`:
+
+**API Gateway** logs:
+
+- Every HTTP request with method, URL, status, response time
+- TCP dispatch and response for each upstream call
+
+**Product Service** logs:
+
+- Cache HITs and MISSes
+- CRUD operations with productId
+- Stock operations with before/after values
+
+**Order Service** logs:
+
+- Full order flow steps (1–4)
+- TCP calls to Product Service
+- RabbitMQ publish confirmation
+
+**Worker Service** logs:
+
+- Event receipt with orderId, customerId
+- Each async task (notification, analytics)
+- Message ACK/NACK
+
+Development: pretty-printed with colors via `pino-pretty`
+Production: JSON format for log aggregators (Datadog, CloudWatch, ELK)
+
+---
+
+## Communication Patterns
+
+| From           | To              | Protocol       | When                         |
+| -------------- | --------------- | -------------- | ---------------------------- |
+| Client         | API Gateway     | HTTP REST      | All API calls                |
+| API Gateway    | Product Service | TCP            | Product CRUD                 |
+| API Gateway    | Order Service   | TCP            | Order creation/query         |
+| Order Service  | Product Service | TCP            | Validate stock, reduce stock |
+| Order Service  | RabbitMQ        | AMQP (publish) | After order saved            |
+| Worker Service | RabbitMQ        | AMQP (consume) | Process order.created events |
+
+---
+
+## TCP Message Patterns
+
+Defined in `libs/common/src/constants/index.ts`:
+
+```typescript
+PRODUCT_PATTERNS = {
+  CREATE: 'product.create',
+  FIND_ALL: 'product.findAll',
+  FIND_ONE: 'product.findOne',
+  REDUCE_STOCK: 'product.reduceStock',
+};
+
+ORDER_PATTERNS = {
+  CREATE: 'order.create',
+  FIND_ALL: 'order.findAll',
+  FIND_ONE: 'order.findOne',
+};
+```
+
+---
+
+## Shared Library Usage
+
+Import shared code from `@app/common` in any service:
+
+```typescript
+import {
+  CreateProductDto, // DTO with class-validator decorators
+  CreateOrderDto, // DTO with nested validation
+  PRODUCT_PATTERNS, // TCP message pattern constants
+  CACHE_KEYS, // Redis key generators
+  IProduct, // TypeScript interfaces
+  OrderCreatedEvent, // RabbitMQ event shape
+  OrderStatus, // Enum: PENDING | CONFIRMED | FAILED
+} from '@app/common';
+```
+
+---
+
+## Production Considerations
+
+1. **Dead Letter Queue (DLQ)**: Add DLQ for Worker nack'd messages
+2. **Circuit Breaker**: Add `nestjs-resilience` for TCP client calls
+3. **Health Checks**: Add `@nestjs/terminus` health endpoints
+4. **API Authentication**: Add JWT guard to API Gateway
+5. **Rate Limiting**: Add `@nestjs/throttler` to API Gateway
+6. **Monitoring**: Integrate Prometheus + Grafana metrics
+7. **Distributed Tracing**: Add OpenTelemetry
+8. **Secrets Management**: Use Vault or AWS Secrets Manager for credentials
