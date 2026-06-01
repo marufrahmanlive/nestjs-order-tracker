@@ -15,7 +15,14 @@ import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 
-import { USER_PATTERNS, SERVICES, ServiceResponse, IUser } from '@app/common';
+import {
+  CreateUserDto,
+  UpdateUserDto,
+  USER_PATTERNS,
+  SERVICES,
+  ServiceResponse,
+  IUser,
+} from '@app/common';
 
 @Controller('users')
 export class UsersController {
@@ -28,7 +35,7 @@ export class UsersController {
   ) {}
 
   @Post()
-  async create(@Body() dto: { email: string; name: string; password: string }) {
+  async create(@Body() dto: CreateUserDto) {
     this.logger.info(
       { email: dto.email },
       'POST /users — forwarding to User Service via TCP',
@@ -118,10 +125,7 @@ export class UsersController {
   }
 
   @Patch(':id')
-  async update(
-    @Param('id') id: string,
-    @Body() updates: Record<string, unknown>,
-  ) {
+  async update(@Param('id') id: string, @Body() updates: UpdateUserDto) {
     this.logger.info(
       { userId: id },
       'PATCH /users/:id — forwarding to User Service via TCP',

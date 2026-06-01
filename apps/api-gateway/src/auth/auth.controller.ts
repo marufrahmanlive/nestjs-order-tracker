@@ -10,7 +10,14 @@ import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 
-import { AUTH_PATTERNS, SERVICES, ServiceResponse, IUser } from '@app/common';
+import {
+  AUTH_PATTERNS,
+  LoginDto,
+  RegisterDto,
+  SERVICES,
+  ServiceResponse,
+  IUser,
+} from '@app/common';
 
 @Controller('auth')
 export class AuthController {
@@ -23,9 +30,7 @@ export class AuthController {
   ) {}
 
   @Post('register')
-  async register(
-    @Body() dto: { email: string; password: string; name: string },
-  ) {
+  async register(@Body() dto: RegisterDto) {
     this.logger.info(
       { email: dto.email },
       'POST /auth/register — forwarding to Auth Service via TCP',
@@ -54,7 +59,7 @@ export class AuthController {
   }
 
   @Post('login')
-  async login(@Body() dto: { email: string; password: string }) {
+  async login(@Body() dto: LoginDto) {
     this.logger.info(
       { email: dto.email },
       'POST /auth/login — forwarding to Auth Service via TCP',

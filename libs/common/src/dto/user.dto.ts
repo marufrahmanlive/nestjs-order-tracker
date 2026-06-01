@@ -5,6 +5,7 @@ import {
   MaxLength,
   IsOptional,
   IsArray,
+  IsBoolean,
 } from 'class-validator';
 
 export class CreateUserDto {
@@ -25,4 +26,21 @@ export class CreateUserDto {
   @IsArray()
   @IsString({ each: true })
   roles?: string[];
+}
+
+export class UpdateUserDto {
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  @MaxLength(100)
+  name?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  roles?: string[];
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }

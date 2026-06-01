@@ -1,9 +1,12 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { AUTH_PATTERNS } from '@app/common';
+import {
+  AUTH_PATTERNS,
+  LoginDto,
+  RegisterDto,
+  ValidateUserDto,
+} from '@app/common';
 import { AuthService } from './auth.service';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
 
 @Controller()
 export class AuthController {
@@ -32,7 +35,7 @@ export class AuthController {
   }
 
   @MessagePattern(AUTH_PATTERNS.VALIDATE_USER)
-  async validateUser(@Payload() dto: { email: string; password: string }) {
+  async validateUser(@Payload() dto: ValidateUserDto) {
     try {
       const user = await this.authService.validateUser(dto.email, dto.password);
       return { success: true, data: user };

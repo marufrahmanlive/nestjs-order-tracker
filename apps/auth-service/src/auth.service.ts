@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 
+import { LoginDto, RegisterDto } from '@app/common';
 import { User, UserDocument } from './schemas/user.schema';
 
 @Injectable()
@@ -17,7 +18,7 @@ export class AuthService {
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
   ) {}
 
-  async register(dto: { email: string; password: string; name: string }) {
+  async register(dto: RegisterDto) {
     const existing = await this.userModel.findOne({ email: dto.email });
     if (existing) {
       throw new Error('Email already registered');
@@ -34,7 +35,7 @@ export class AuthService {
     return this.sanitizeUser(user);
   }
 
-  async login(dto: { email: string; password: string }) {
+  async login(dto: LoginDto) {
     const user = await this.userModel
       .findOne({ email: dto.email })
       .select('+password');
