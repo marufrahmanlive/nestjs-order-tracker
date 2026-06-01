@@ -3,6 +3,7 @@ import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { ValidationPipe } from '@nestjs/common';
 import { Logger } from 'nestjs-pino';
 import { ProductServiceModule } from './product-service.module';
+import { RpcExceptionFilter } from '@app/common';
 
 async function bootstrap() {
   const host = process.env.PRODUCT_SERVICE_HOST || '0.0.0.0';
@@ -18,6 +19,10 @@ async function bootstrap() {
   );
 
   app.useLogger(app.get(Logger));
+
+  // Global exception filter for microservices
+  app.useGlobalFilters(new RpcExceptionFilter());
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { Logger } from 'nestjs-pino';
 import { ApiGatewayModule } from './api-gateway.module';
+import { HttpExceptionFilter } from '@app/common';
 
 async function bootstrap() {
   const port = parseInt(process.env.PORT || '3000', 10);
@@ -10,6 +11,9 @@ async function bootstrap() {
 
   // Use Pino as the application logger
   app.useLogger(app.get(Logger));
+
+  // Global exception filter - handles all exceptions with custom responses
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   // Global validation pipe
   app.useGlobalPipes(

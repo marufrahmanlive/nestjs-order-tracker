@@ -1,0 +1,47 @@
+/**
+ * Standardized error codes for consistent error handling across services.
+ * Clients should use these codes for error handling, not HTTP status codes.
+ */
+export const ERROR_CODES = {
+  // Validation errors
+  VALIDATION_FAILED: 'VALIDATION_FAILED',
+  INVALID_INPUT: 'INVALID_INPUT',
+
+  // Authentication errors
+  UNAUTHORIZED: 'UNAUTHORIZED',
+  TOKEN_EXPIRED: 'TOKEN_EXPIRED',
+  TOKEN_INVALID: 'TOKEN_INVALID',
+  CREDENTIALS_INVALID: 'CREDENTIALS_INVALID',
+
+  // Authorization errors
+  FORBIDDEN: 'FORBIDDEN',
+  ACCESS_DENIED: 'ACCESS_DENIED',
+
+  // Resource errors
+  NOT_FOUND: 'NOT_FOUND',
+  RESOURCE_NOT_FOUND: 'RESOURCE_NOT_FOUND',
+
+  // Data errors
+  CONFLICT: 'CONFLICT',
+  DUPLICATE_RESOURCE: 'DUPLICATE_RESOURCE',
+  INVALID_STATE: 'INVALID_STATE',
+
+  // Service errors
+  INTERNAL_ERROR: 'INTERNAL_ERROR',
+  SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
+  SERVICE_TIMEOUT: 'SERVICE_TIMEOUT',
+  EXTERNAL_SERVICE_ERROR: 'EXTERNAL_SERVICE_ERROR',
+
+  // Rate limiting
+  RATE_LIMITED: 'RATE_LIMITED',
+  TOO_MANY_REQUESTS: 'TOO_MANY_REQUESTS',
+
+  // Business logic errors
+  INVALID_ORDER_STATUS: 'INVALID_ORDER_STATUS',
+  INSUFFICIENT_STOCK: 'INSUFFICIENT_STOCK',
+  ORDER_NOT_FOUND: 'ORDER_NOT_FOUND',
+  PRODUCT_NOT_FOUND: 'PRODUCT_NOT_FOUND',
+  PRODUCT_OUT_OF_STOCK: 'PRODUCT_OUT_OF_STOCK',
+} as const;
+
+export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];

@@ -39,6 +39,9 @@ export const CACHE_KEYS = {
 } as const;
 
 export const CACHE_TTL = {
-  PRODUCTS: 60,       // 60 seconds
+  PRODUCTS: 60, // 60 seconds
   PRODUCT_BY_ID: 120, // 120 seconds
 } as const;
+
+// ─── Error Codes ─────────────────────────────────────────────────────────────
+export * from './error-codes.constants';

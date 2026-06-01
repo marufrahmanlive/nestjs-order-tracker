@@ -1,375 +1,206 @@
-# Order Tracker System — NestJS Microservices Monorepo
+# Order Tracker
 
-A production-style NestJS monorepo implementing an Order Tracker System using microservices architecture.
+Order Tracker is a NestJS microservice-based application for managing products, orders, and background worker processing. This repository includes:
 
----
+- `api-gateway` — HTTP gateway for orders and products
+- `product-service` — product catalog, stock reduction, Redis caching
+- `order-service` — order validation, MongoDB persistence, RabbitMQ publishing
+- `worker-service` — RabbitMQ consumer for `order.created` events
 
-## Architecture Overview
+Infrastructure services used by this project:
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        CLIENT (HTTP)                             │
-└─────────────────────────┬───────────────────────────────────────┘
-                          │ REST API
-                          ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    API GATEWAY :3000                             │
-│              (NestJS HTTP + Pino Logger)                         │
-│         No DB access. Routes via TCP only.                       │
-└──────────────┬──────────────────────┬───────────────────────────┘
-               │ TCP                  │ TCP
-               ▼                      ▼
-┌──────────────────────┐  ┌───────────────────────────────────────┐
-│  PRODUCT SERVICE     │  │         ORDER SERVICE :3002            │
-│      :3001           │◄─┤  (TCP + RabbitMQ Publisher)           │
-│  MongoDB + Redis     │  │  MongoDB                               │
-│  Cache L1+L2         │  │  Calls Product Service via TCP         │
-└──────────────────────┘  └──────────────────┬──────────────────  ┘
-                                             │ RabbitMQ publish
-                                             ▼
-                          ┌─────────────────────────────────────── ┐
-                          │        WORKER SERVICE                   │
-                          │  (RabbitMQ Consumer)                    │
-                          │  Handles: notifications, analytics      │
-                          └─────────────────────────────────────── ┘
-
-Infrastructure:
-  MongoDB  :27017   — data persistence
-  Redis    :6379    — L2 cache (product list + by id)
-  RabbitMQ :5672    — async event bus
-             :15672  — management UI
-```
+- MongoDB
+- Redis
+- RabbitMQ
 
 ---
 
-## Project Structure
+## Requirements
 
-```
-order-tracker/
-├── apps/
-│   ├── api-gateway/           # HTTP REST API (port 3000)
-│   │   └── src/
-│   │       ├── products/      # Products controller
-│   │       ├── orders/        # Orders controller
-│   │       ├── api-gateway.module.ts
-│   │       └── main.ts
-│   │
-│   ├── product-service/       # TCP Microservice (port 3001)
-│   │   └── src/
-│   │       ├── schemas/       # MongoDB schema
-│   │       ├── product.controller.ts
-│   │       ├── product.service.ts
-│   │       ├── product-service.module.ts
-│   │       └── main.ts
-│   │
-│   ├── order-service/         # TCP Microservice (port 3002)
-│   │   └── src/
-│   │       ├── schemas/       # MongoDB schema
-│   │       ├── order.controller.ts
-│   │       ├── order.service.ts
-│   │       ├── order-service.module.ts
-│   │       └── main.ts
-│   │
-│   └── worker-service/        # RabbitMQ Consumer
-│       └── src/
-│           ├── worker.controller.ts
-│           ├── worker.service.ts
-│           ├── worker-service.module.ts
-│           └── main.ts
-│
-├── libs/
-│   └── common/                # Shared library
-│       └── src/
-│           ├── dto/
-│           │   ├── product.dto.ts    # CreateProductDto, ReduceStockDto
-│           │   └── order.dto.ts      # CreateOrderDto, OrderItemDto
-│           ├── interfaces/
-│           │   └── index.ts          # IProduct, IOrder, OrderCreatedEvent...
-│           ├── constants/
-│           │   └── index.ts          # TCP patterns, queue names, cache keys
-│           └── index.ts              # Barrel export
-│
-├── docker-compose.yml
-├── nest-cli.json
-├── tsconfig.json
-├── package.json
-└── .env.example
-```
-
----
-
-## Prerequisites
-
-- Node.js 20+
+- Node.js 20+ (recommended)
+- npm 10+ or compatible
 - Docker & Docker Compose
-- npm
+- Git
 
 ---
 
-## Step 1 — Install Dependencies
+## Install dependencies
 
 ```bash
+cd d:/projects(2026)/order-tracker
 npm install
 ```
 
+> Run `npm install` from the repository root to install all shared dependencies.
+
 ---
 
-## Step 2 — Start Infrastructure (Docker)
+## Docker infrastructure
+
+Start the required infrastructure services:
 
 ```bash
-# Start MongoDB, Redis, RabbitMQ
-docker-compose up mongodb redis rabbitmq -d
-
-# Verify health
-docker-compose ps
+docker compose up -d mongodb redis rabbitmq
 ```
 
-Services available:
-
-- **MongoDB**: `mongodb://root:rootpassword@localhost:27017`
-- **Redis**: `redis://localhost:6379`
-- **RabbitMQ**: `amqp://guest:guest@localhost:5672`
-- **RabbitMQ UI**: http://localhost:15672 (guest/guest)
-
----
-
-## Step 3 — Configure Environment
+Verify the containers:
 
 ```bash
-cp .env.example .env
-# Edit .env if needed (defaults work with docker-compose)
+docker compose ps
 ```
 
----
-
-## Step 4 — Run Services (Development)
-
-Open 4 terminals:
+Stop infrastructure:
 
 ```bash
-# Terminal 1 — Product Service
-npm run start:product-service:dev
+docker compose down
+```
 
-# Terminal 2 — Order Service
-npm run start:order-service:dev
+### Docker service endpoints
 
-# Terminal 3 — Worker Service
-npm run start:worker-service:dev
+- MongoDB: `mongodb://localhost:27017`
+- Redis: `redis://localhost:6379`
+- RabbitMQ: `amqp://guest:guest@localhost:5672`
+- RabbitMQ management UI: `http://localhost:15672`
 
-# Terminal 4 — API Gateway
+---
+
+## Environment variables
+
+The services read these values from `process.env`.
+
+Default values are set in code, so the app works with local Docker defaults.
+
+```env
+MONGODB_URI=mongodb://localhost:27017/order_tracker
+REDIS_HOST=localhost
+REDIS_PORT=6379
+RABBITMQ_URL=amqp://guest:guest@localhost:5672
+NODE_ENV=development
+```
+
+You can place these values in a `.env` file if you want to use environment variable loading in your shell.
+
+---
+
+## Run services
+
+### Run all services in development mode
+
+Open a separate terminal for each service:
+
+```bash
 npm run start:api-gateway:dev
+npm run start:product-service:dev
+npm run start:order-service:dev
+npm run start:worker-service:dev
 ```
 
----
-
-## Step 5 — Run with Docker Compose (Production)
+### Run a specific service
 
 ```bash
-docker-compose up --build
+npm run start:api-gateway
+npm run start:product-service
+npm run start:order-service
+npm run start:worker-service
+```
+
+### Build all services
+
+```bash
+npm run build:all
+```
+
+### Production-like start
+
+```bash
+npm run start:prod
 ```
 
 ---
 
-## API Reference
+## Package scripts
 
-Base URL: `http://localhost:3000/api/v1`
+| Command | Description |
+|---|---|
+| `npm install` | Install dependencies |
+| `npm run build` | Build the default Nest application |
+| `npm run build:all` | Build all apps (`api-gateway`, `product-service`, `order-service`, `worker-service`) |
+| `npm run start` | Start the default Nest app |
+| `npm run start:dev` | Start the default Nest app in watch mode |
+| `npm run start:debug` | Start the default Nest app in debug watch mode |
+| `npm run start:api-gateway` | Start the API Gateway service |
+| `npm run start:api-gateway:dev` | Start the API Gateway service in watch mode |
+| `npm run start:product-service` | Start the Product Service |
+| `npm run start:product-service:dev` | Start the Product Service in watch mode |
+| `npm run start:order-service` | Start the Order Service |
+| `npm run start:order-service:dev` | Start the Order Service in watch mode |
+| `npm run start:worker-service` | Start the Worker Service |
+| `npm run start:worker-service:dev` | Start the Worker Service in watch mode |
+| `npm run format` | Format source files |
+| `npm run lint` | Lint and fix TypeScript files |
+| `npm run test` | Run Jest unit tests |
+| `npm run test:watch` | Run Jest in watch mode |
+| `npm run test:cov` | Generate test coverage |
+| `npm run test:e2e` | Run end-to-end tests |
+
+---
+
+## API Gateway endpoints
+
+The API gateway exposes the following HTTP routes:
 
 ### Products
-
-#### Create Product
-
-```http
-POST /api/v1/products
-Content-Type: application/json
-
-{
-  "name": "Mechanical Keyboard",
-  "description": "TKL 80% keyboard with Cherry MX switches",
-  "price": 149.99,
-  "stock": 50
-}
-```
-
-#### Get All Products
-
-```http
-GET /api/v1/products
-```
-
-#### Get Product by ID
-
-```http
-GET /api/v1/products/:id
-```
+- `POST /products` — create a product
+- `GET /products` — list all products
+- `GET /products/:id` — get a product by ID
 
 ### Orders
-
-#### Create Order
-
-```http
-POST /api/v1/orders
-Content-Type: application/json
-
-{
-  "customerId": "customer_abc123",
-  "items": [
-    { "productId": "<product-id>", "quantity": 2 },
-    { "productId": "<product-id-2>", "quantity": 1 }
-  ]
-}
-```
-
-#### Get All Orders
-
-```http
-GET /api/v1/orders
-```
-
-#### Get Order by ID
-
-```http
-GET /api/v1/orders/:id
-```
+- `POST /orders` — create an order
+- `GET /orders` — list all orders
+- `GET /orders/:id` — get an order by ID
 
 ---
 
-## Order Flow (Step-by-step)
+## Service behavior
 
+- `product-service` uses Redis for caching product data and fulfills stock reduction requests.
+- `order-service` validates product availability via the product service, saves orders to MongoDB, and publishes `order.created` events to RabbitMQ.
+- `worker-service` listens for RabbitMQ `order.created` events and processes those orders.
+
+---
+
+## Troubleshooting
+
+### Port conflict on `3001`
+
+If port `3001` is already in use:
+
+```powershell
+netstat -ano | findstr :3001
+taskkill /PID <pid> /F
 ```
-POST /api/v1/orders
-        │
-        ▼
-  API Gateway
-  (HTTP → TCP)
-        │
-        ▼
-  Order Service ──── TCP ──►  Product Service
-  Step 1: Validate stock      (findOne per item)
-  Step 2: Reduce stock ──────► (reduceStock + cache invalidation)
-  Step 3: Save order (MongoDB)
-  Step 4: Emit "order.created" ──► RabbitMQ
-        │
-        ▼
-  Worker Service (RabbitMQ Consumer)
-  - Send notification (simulated)
-  - Track analytics (simulated)
-  - ACK message
+
+### Check Docker logs
+
+```bash
+docker compose logs --tail=100
+```
+
+### Verify infrastructure
+
+```bash
+docker compose ps
 ```
 
 ---
 
-## Caching Strategy (Redis + In-Memory L1)
+## Notes
 
-Two-layer cache implemented in Product Service:
-
-| Layer | Backend       | TTL     | Purpose                  |
-| ----- | ------------- | ------- | ------------------------ |
-| L1    | In-memory LRU | 30s     | Ultra-fast local cache   |
-| L2    | Redis         | 60-120s | Shared distributed cache |
-
-Cache keys:
-
-- `products:all` — all products list (TTL: 60s)
-- `products:{id}` — single product (TTL: 120s)
-
-Cache is **invalidated** on:
-
-- Product create → `products:all` deleted
-- Stock reduction → `products:{id}` + `products:all` deleted
+- This project is configured for local development and microservice testing.
+- If you want to run only the API Gateway, the required infrastructure services are MongoDB, Redis, and RabbitMQ.
 
 ---
 
-## Logging (Pino)
+## License
 
-All services use structured JSON logging via `nestjs-pino`:
-
-**API Gateway** logs:
-
-- Every HTTP request with method, URL, status, response time
-- TCP dispatch and response for each upstream call
-
-**Product Service** logs:
-
-- Cache HITs and MISSes
-- CRUD operations with productId
-- Stock operations with before/after values
-
-**Order Service** logs:
-
-- Full order flow steps (1–4)
-- TCP calls to Product Service
-- RabbitMQ publish confirmation
-
-**Worker Service** logs:
-
-- Event receipt with orderId, customerId
-- Each async task (notification, analytics)
-- Message ACK/NACK
-
-Development: pretty-printed with colors via `pino-pretty`
-Production: JSON format for log aggregators (Datadog, CloudWatch, ELK)
-
----
-
-## Communication Patterns
-
-| From           | To              | Protocol       | When                         |
-| -------------- | --------------- | -------------- | ---------------------------- |
-| Client         | API Gateway     | HTTP REST      | All API calls                |
-| API Gateway    | Product Service | TCP            | Product CRUD                 |
-| API Gateway    | Order Service   | TCP            | Order creation/query         |
-| Order Service  | Product Service | TCP            | Validate stock, reduce stock |
-| Order Service  | RabbitMQ        | AMQP (publish) | After order saved            |
-| Worker Service | RabbitMQ        | AMQP (consume) | Process order.created events |
-
----
-
-## TCP Message Patterns
-
-Defined in `libs/common/src/constants/index.ts`:
-
-```typescript
-PRODUCT_PATTERNS = {
-  CREATE: 'product.create',
-  FIND_ALL: 'product.findAll',
-  FIND_ONE: 'product.findOne',
-  REDUCE_STOCK: 'product.reduceStock',
-};
-
-ORDER_PATTERNS = {
-  CREATE: 'order.create',
-  FIND_ALL: 'order.findAll',
-  FIND_ONE: 'order.findOne',
-};
-```
-
----
-
-## Shared Library Usage
-
-Import shared code from `@app/common` in any service:
-
-```typescript
-import {
-  CreateProductDto, // DTO with class-validator decorators
-  CreateOrderDto, // DTO with nested validation
-  PRODUCT_PATTERNS, // TCP message pattern constants
-  CACHE_KEYS, // Redis key generators
-  IProduct, // TypeScript interfaces
-  OrderCreatedEvent, // RabbitMQ event shape
-  OrderStatus, // Enum: PENDING | CONFIRMED | FAILED
-} from '@app/common';
-```
-
----
-
-## Production Considerations
-
-1. **Dead Letter Queue (DLQ)**: Add DLQ for Worker nack'd messages
-2. **Circuit Breaker**: Add `nestjs-resilience` for TCP client calls
-3. **Health Checks**: Add `@nestjs/terminus` health endpoints
-4. **API Authentication**: Add JWT guard to API Gateway
-5. **Rate Limiting**: Add `@nestjs/throttler` to API Gateway
-6. **Monitoring**: Integrate Prometheus + Grafana metrics
-7. **Distributed Tracing**: Add OpenTelemetry
-8. **Secrets Management**: Use Vault or AWS Secrets Manager for credentials
+This repository is currently unlicensed.
