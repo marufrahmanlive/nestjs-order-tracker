@@ -33,7 +33,7 @@ import { Product, ProductSchema } from './schemas/product.schema';
       useFactory: (config: ConfigService) => ({
         uri: config.get<string>(
           'MONGODB_URI',
-          'mongodb://localhost:27017/order_tracker',
+          'mongodb://root:rootpassword@localhost:27017/order_tracker?authSource=admin',
         ),
       }),
       inject: [ConfigService],

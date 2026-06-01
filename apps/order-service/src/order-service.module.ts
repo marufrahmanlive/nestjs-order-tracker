@@ -25,7 +25,10 @@ import { Order, OrderSchema } from './schemas/order.schema';
 
     MongooseModule.forRootAsync({
       useFactory: (config: ConfigService) => ({
-        uri: config.get<string>('MONGODB_URI', 'mongodb://localhost:27017/order_tracker'),
+        uri: config.get<string>(
+          'MONGODB_URI',
+          'mongodb://root:rootpassword@localhost:27017/order_tracker?authSource=admin',
+        ),
       }),
       inject: [ConfigService],
     }),
@@ -54,7 +57,12 @@ import { Order, OrderSchema } from './schemas/order.schema';
         useFactory: (config: ConfigService) => ({
           transport: Transport.RMQ,
           options: {
-            urls: [config.get<string>('RABBITMQ_URL', 'amqp://guest:guest@localhost:5672')],
+            urls: [
+              config.get<string>(
+                'RABBITMQ_URL',
+                'amqp://guest:guest@localhost:5672',
+              ),
+            ],
             queue: RABBITMQ_QUEUES.ORDER_CREATED,
             queueOptions: { durable: true },
             persistent: true,

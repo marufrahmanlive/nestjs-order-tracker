@@ -4,10 +4,10 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --only=production && npm ci
+RUN npm install
 
 COPY . .
-RUN npm run build:order-service 2>/dev/null || npx nest build order-service
+RUN npx nest build order-service
 
 # ─── Stage 2: Production ────────────────────────────────────────────────────
 FROM node:20-alpine AS production
@@ -18,11 +18,10 @@ ENV NODE_ENV=production
 
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/dist/apps/order-service ./dist
-COPY --from=builder /app/dist/libs ./dist/../libs
+COPY --from=builder /app/dist ./dist
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
 
-EXPOSE 3000
-CMD ["node", "dist/apps/order-service/main"]
+EXPOSE 3002
+CMD ["node", "dist/apps/order-service/main.js"]

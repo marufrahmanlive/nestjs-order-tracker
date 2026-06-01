@@ -7,7 +7,7 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
-RUN npx nest build worker-service
+RUN npx nest build auth-service
 
 # ─── Stage 2: Production ────────────────────────────────────────────────────
 FROM node:20-alpine AS production
@@ -23,4 +23,4 @@ COPY --from=builder /app/dist ./dist
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
 
-CMD ["node", "dist/apps/worker-service/main.js"]
+CMD ["node", "dist/apps/auth-service/main.js"]

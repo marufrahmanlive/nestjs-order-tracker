@@ -37,6 +37,9 @@ export class UserController {
   async findOne(@Payload() id: string) {
     try {
       const user = await this.userService.findById(id);
+      if (!user) {
+        return { success: false, error: 'User not found' };
+      }
       return { success: true, data: user };
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
