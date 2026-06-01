@@ -12,6 +12,22 @@ export const ORDER_PATTERNS = {
   FIND_ONE: 'order.findOne',
 } as const;
 
+export const AUTH_PATTERNS = {
+  REGISTER: 'auth.register',
+  LOGIN: 'auth.login',
+  VALIDATE_USER: 'auth.validateUser',
+  FIND_BY_ID: 'auth.findById',
+  FIND_BY_EMAIL: 'auth.findByEmail',
+} as const;
+
+export const USER_PATTERNS = {
+  CREATE: 'user.create',
+  FIND_ALL: 'user.findAll',
+  FIND_ONE: 'user.findOne',
+  UPDATE: 'user.update',
+  SOFT_DELETE: 'user.softDelete',
+} as const;
+
 // ─── RabbitMQ ────────────────────────────────────────────────────────────────
 export const RABBITMQ_EXCHANGES = {
   ORDER_EVENTS: 'order_events',
@@ -30,6 +46,8 @@ export const RABBITMQ_ROUTING_KEYS = {
 export const SERVICES = {
   PRODUCT: 'PRODUCT_SERVICE',
   ORDER: 'ORDER_SERVICE',
+  AUTH: 'AUTH_SERVICE',
+  USER: 'USER_SERVICE',
 } as const;
 
 // ─── Cache Keys ──────────────────────────────────────────────────────────────

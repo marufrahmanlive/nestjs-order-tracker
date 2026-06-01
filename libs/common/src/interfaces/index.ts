@@ -1,3 +1,15 @@
+// ─── User ────────────────────────────────────────────────────────────────────
+export interface IUser {
+  _id: string;
+  email: string;
+  name: string;
+  roles: string[];
+  isActive: boolean;
+  deletedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // ─── Product ────────────────────────────────────────────────────────────────
 export interface IProduct {
   _id: string;

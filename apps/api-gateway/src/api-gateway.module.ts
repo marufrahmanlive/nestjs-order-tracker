@@ -6,6 +6,8 @@ import { LoggerModule } from 'nestjs-pino';
 import { SERVICES } from '@app/common';
 import { ProductsController } from './products/products.controller';
 import { OrdersController } from './orders/orders.controller';
+import { AuthController } from './auth/auth.controller';
+import { UsersController } from './users/users.controller';
 
 @Module({
   imports: [
@@ -16,9 +18,11 @@ import { OrdersController } from './orders/orders.controller';
         level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
         transport:
           process.env.NODE_ENV !== 'production'
-            ? { target: 'pino-pretty', options: { colorize: true, singleLine: false } }
+            ? {
+                target: 'pino-pretty',
+                options: { colorize: true, singleLine: false },
+              }
             : undefined,
-        // Structured request/response logging
         customLogLevel: (_req, res) => {
           if (res.statusCode >= 500) return 'error';
           if (res.statusCode >= 400) return 'warn';
@@ -66,7 +70,42 @@ import { OrdersController } from './orders/orders.controller';
         inject: [ConfigService],
       },
     ]),
+
+    // TCP client for Auth Service
+    ClientsModule.registerAsync([
+      {
+        name: SERVICES.AUTH,
+        useFactory: (config: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: config.get<string>('AUTH_SERVICE_HOST', 'localhost'),
+            port: config.get<number>('AUTH_SERVICE_PORT', 3003),
+          },
+        }),
+        inject: [ConfigService],
+      },
+    ]),
+
+    // TCP client for User Service
+    ClientsModule.registerAsync([
+      {
+        name: SERVICES.USER,
+        useFactory: (config: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: config.get<string>('USER_SERVICE_HOST', 'localhost'),
+            port: config.get<number>('USER_SERVICE_PORT', 3004),
+          },
+        }),
+        inject: [ConfigService],
+      },
+    ]),
   ],
-  controllers: [ProductsController, OrdersController],
+  controllers: [
+    ProductsController,
+    OrdersController,
+    AuthController,
+    UsersController,
+  ],
 })
 export class ApiGatewayModule {}

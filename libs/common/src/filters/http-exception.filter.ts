@@ -33,7 +33,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const method = req.method;
 
     let statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
-    let code = ERROR_CODES.INTERNAL_ERROR;
+    let code: string = ERROR_CODES.INTERNAL_ERROR;
     let message = 'Internal server error';
     let errors: Record<string, any> | string[] | undefined = undefined;
 
@@ -139,7 +139,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
           formatted[error.property] = [];
         }
         if (error.constraints) {
-          formatted[error.property].push(...Object.values(error.constraints));
+          formatted[error.property].push(
+            ...Object.values(error.constraints as Record<string, string>),
+          );
         }
         if (error.children && Array.isArray(error.children)) {
           // Handle nested validation errors

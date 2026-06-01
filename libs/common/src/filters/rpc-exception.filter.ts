@@ -27,7 +27,7 @@ export class RpcExceptionFilter extends BaseRpcExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): Observable<never> {
     // If it's already an RpcException, let the base handler deal with it
     if (exception instanceof RpcException) {
-      return super.catch(exception, host);
+      return super.catch(exception, host) as Observable<never>;
     }
 
     if (exception instanceof DomainException) {

@@ -1,5 +1,3 @@
-import { ErrorCode } from '../constants';
-
 /**
  * Standard error response DTO returned by all exception filters.
  * Provides consistent error structure across all services.
@@ -8,7 +6,7 @@ export class ErrorResponseDto {
   /**
    * Stable error code for programmatic error handling
    */
-  code: ErrorCode;
+  code: string;
 
   /**
    * Human-readable error message
@@ -36,7 +34,7 @@ export class ErrorResponseDto {
   errors?: Record<string, any> | string[];
 
   constructor(
-    code: ErrorCode,
+    code: string,
     message: string,
     statusCode: number,
     path?: string,
