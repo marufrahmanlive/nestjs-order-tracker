@@ -33,6 +33,8 @@ export class RolesGuard implements CanActivate {
       return false;
     }
 
+    console.log('user.roles>>>>>>>>>>>', user?.roles);
+
     // Check if the user has at least ONE of the required roles (OR logic)
     return requiredRoles.some((role) => user.roles?.includes(role));
   }

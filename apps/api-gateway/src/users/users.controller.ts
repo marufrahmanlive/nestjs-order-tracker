@@ -50,7 +50,7 @@ export class UsersController {
   @ApiResponse({ status: 201, description: 'User created successfully' })
   @ApiResponse({ status: 400, description: 'Validation failed' })
   @ApiBearerAuth('access-token')
-  @Roles('admin')
+  @Roles('admin', 'user')
   @Post()
   async create(@Body() dto: CreateUserDto) {
     this.logger.info(
@@ -100,7 +100,7 @@ export class UsersController {
     description: 'Paginated user list with total count',
   })
   @ApiBearerAuth('access-token')
-  @Roles('admin')
+  @Roles('admin', 'user')
   @Get()
   async findAll(@Query('skip') skip?: string, @Query('limit') limit?: string) {
     this.logger.info('GET /users — forwarding to User Service via TCP');
@@ -144,7 +144,7 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'User found' })
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiBearerAuth('access-token')
-  @Roles('admin')
+  @Roles('user', 'admin')
   @Get(':id')
   async findOne(@Param('id') id: string) {
     this.logger.info(
@@ -178,7 +178,7 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'User updated successfully' })
   @ApiResponse({ status: 400, description: 'Validation failed' })
   @ApiBearerAuth('access-token')
-  @Roles('admin')
+  @Roles('admin', 'user')
   @Patch(':id')
   async update(@Param('id') id: string, @Body() updates: UpdateUserDto) {
     this.logger.info(
@@ -212,7 +212,7 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'User soft deleted' })
   @ApiResponse({ status: 400, description: 'User not found' })
   @ApiBearerAuth('access-token')
-  @Roles('admin')
+  @Roles('admin', 'user')
   @Delete(':id')
   async softDelete(@Param('id') id: string) {
     this.logger.info(

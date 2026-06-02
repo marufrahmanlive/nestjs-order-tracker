@@ -51,7 +51,7 @@ export class ProductsController {
   })
   @ApiResponse({ status: 403, description: 'Forbidden — requires admin role' })
   @ApiBearerAuth('access-token')
-  @Roles('admin')
+  @Roles('admin', 'user')
   @Post()
   async create(@Body() dto: CreateProductDto) {
     this.logger.info(
