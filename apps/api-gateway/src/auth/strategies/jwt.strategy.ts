@@ -14,6 +14,7 @@ import { ConfigService } from '@nestjs/config';
  */
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
+  // Configure the strategy to extract JWT from the Authorization header and verify it using the secret.
   constructor(private readonly configService: ConfigService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -28,6 +29,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
    * Just shape the payload into request.user.
    */
   async validate(payload: { sub: string; email: string; roles: string[] }) {
+    // In a more complex app, we might check the user's roles/permissions here
+    // or fetch additional user info from a database. But for this simple example,
+    // we'll just return the relevant info from the JWT payload.
     return {
       sub: payload.sub,
       email: payload.email,

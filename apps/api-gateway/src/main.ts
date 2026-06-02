@@ -1,9 +1,8 @@
-import { NestFactory, Reflector } from '@nestjs/core';
+import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { Logger } from 'nestjs-pino';
 import { ApiGatewayModule } from './api-gateway.module';
-import { HttpExceptionFilter, RolesGuard } from '@app/common';
-import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { HttpExceptionFilter } from '@app/common';
 
 async function bootstrap() {
   const port = parseInt(process.env.PORT || '3000', 10);
@@ -28,15 +27,12 @@ async function bootstrap() {
   // ───────────────────────────────────────────────────────────────────────────
   // Global Guards — applied to ALL routes automatically
   // ───────────────────────────────────────────────────────────────────────────
-
-  const reflector = app.get(Reflector);
-
-  // 1. JwtAuthGuard: Verifies JWT on every request (unless @Public())
-  app.useGlobalGuards(new JwtAuthGuard(reflector));
-
-  // 2. RolesGuard: Enforces role-based access (@Roles('admin'))
-  //    Runs AFTER JwtAuthGuard so request.user is populated
-  app.useGlobalGuards(new RolesGuard(reflector));
+  //
+  // Both JwtAuthGuard and RolesGuard are registered via APP_GUARD in AuthModule
+  // (NestJS official pattern: { provide: APP_GUARD, useClass: ... })
+  // Order in providers array controls execution order:
+  //   JwtAuthGuard runs FIRST → populates request.user
+  //   RolesGuard runs SECOND → enforces role-based access (@Roles('admin'))
 
   // Global prefix
   app.setGlobalPrefix('api/v1');
