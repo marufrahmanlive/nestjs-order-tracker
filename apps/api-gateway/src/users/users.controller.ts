@@ -14,6 +14,13 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 
 import {
   CreateUserDto,
@@ -25,6 +32,7 @@ import {
   Roles,
 } from '@app/common';
 
+@ApiTags('Users')
 @Controller('users')
 export class UsersController {
   constructor(
@@ -35,6 +43,13 @@ export class UsersController {
     private readonly logger: PinoLogger,
   ) {}
 
+  @ApiOperation({
+    summary: 'Create a new user',
+    description: 'Admin only. Creates a new user account.',
+  })
+  @ApiResponse({ status: 201, description: 'User created successfully' })
+  @ApiResponse({ status: 400, description: 'Validation failed' })
+  @ApiBearerAuth('access-token')
   @Roles('admin')
   @Post()
   async create(@Body() dto: CreateUserDto) {
@@ -65,6 +80,26 @@ export class UsersController {
     return response.data;
   }
 
+  @ApiOperation({
+    summary: 'List all users',
+    description:
+      'Admin only. Paginated user listing (excludes soft-deleted users).',
+  })
+  @ApiQuery({
+    name: 'skip',
+    required: false,
+    description: 'Number of records to skip (default: 0)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Max records to return (default: 20)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Paginated user list with total count',
+  })
+  @ApiBearerAuth('access-token')
   @Roles('admin')
   @Get()
   async findAll(@Query('skip') skip?: string, @Query('limit') limit?: string) {
@@ -102,6 +137,13 @@ export class UsersController {
     return response.data;
   }
 
+  @ApiOperation({
+    summary: 'Get user by ID',
+    description: 'Admin only. Fetches a single user by MongoDB ObjectId.',
+  })
+  @ApiResponse({ status: 200, description: 'User found' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiBearerAuth('access-token')
   @Roles('admin')
   @Get(':id')
   async findOne(@Param('id') id: string) {
@@ -128,6 +170,14 @@ export class UsersController {
     return response.data;
   }
 
+  @ApiOperation({
+    summary: 'Update user',
+    description:
+      'Admin only. Partially updates a user (name, roles, isActive).',
+  })
+  @ApiResponse({ status: 200, description: 'User updated successfully' })
+  @ApiResponse({ status: 400, description: 'Validation failed' })
+  @ApiBearerAuth('access-token')
   @Roles('admin')
   @Patch(':id')
   async update(@Param('id') id: string, @Body() updates: UpdateUserDto) {
@@ -154,6 +204,14 @@ export class UsersController {
     return response.data;
   }
 
+  @ApiOperation({
+    summary: 'Soft delete user',
+    description:
+      'Admin only. Marks user as deleted (does not permanently remove).',
+  })
+  @ApiResponse({ status: 200, description: 'User soft deleted' })
+  @ApiResponse({ status: 400, description: 'User not found' })
+  @ApiBearerAuth('access-token')
   @Roles('admin')
   @Delete(':id')
   async softDelete(@Param('id') id: string) {

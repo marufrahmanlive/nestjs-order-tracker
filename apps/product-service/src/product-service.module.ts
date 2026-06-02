@@ -41,6 +41,12 @@ import { Product, ProductSchema } from './schemas/product.schema';
 
     MongooseModule.forFeature([{ name: Product.name, schema: ProductSchema }]),
 
+    // Redis-based cache using Keyv adapter.
+    // createKeyv creates a Keyv store backed by Redis — this replaces the default
+    // in-memory cache with a distributed one, which is essential when running
+    // multiple instances of the Product Service behind a load balancer.
+    // Without distributed cache, each instance would have its own cache,
+    // leading to stale/inconsistent data after stock reductions.
     CacheModule.registerAsync({
       isGlobal: true,
       useFactory: async (config: ConfigService) => {

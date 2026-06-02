@@ -34,15 +34,26 @@ export class OrderService {
   ) {}
 
   async create(dto: CreateOrderDto): Promise<Order> {
-    this.logger.info({ customerId: dto.customerId, itemCount: dto.items.length }, 'Starting order creation flow');
+    this.logger.info(
+      { customerId: dto.customerId, itemCount: dto.items.length },
+      'Starting order creation flow',
+    );
 
     // ── Step 1: Validate all products exist and have enough stock ──────────
-    this.logger.info('Step 1: Validating product stock via Product Service (TCP)');
+    this.logger.info(
+      'Step 1: Validating product stock via Product Service (TCP)',
+    );
 
     let totalAmount = 0;
-    const enrichedItems: { productId: string; quantity: number; unitPrice: number }[] = [];
+    const enrichedItems: {
+      productId: string;
+      quantity: number;
+      unitPrice: number;
+    }[] = [];
 
+    // Loop through each item and validate against Product Service via TCP
     for (const item of dto.items) {
+      // Send TCP request to Product Service to fetch product details
       const response = await firstValueFrom<ServiceResponse<IProduct>>(
         this.productClient.send(PRODUCT_PATTERNS.FIND_ONE, item.productId),
       );
@@ -54,12 +65,22 @@ export class OrderService {
       }
 
       const product = response.data;
+      // Check stock availability — reject early before any stock is reduced
       if (product.stock < item.quantity) {
         const msg = `Insufficient stock for product ${product.name}. Available: ${product.stock}, Requested: ${item.quantity}`;
-        this.logger.warn({ productId: item.productId, available: product.stock, requested: item.quantity }, msg);
+        this.logger.warn(
+          {
+            productId: item.productId,
+            available: product.stock,
+            requested: item.quantity,
+          },
+          msg,
+        );
         throw new Error(msg);
       }
 
+      // Enrich the order item with the current unit price from Product Service
+      // (prevents price manipulation by the client)
       enrichedItems.push({
         productId: item.productId,
         quantity: item.quantity,
@@ -68,7 +89,10 @@ export class OrderService {
       totalAmount += product.price * item.quantity;
     }
 
-    this.logger.info({ totalAmount }, 'Step 1 complete: All products validated');
+    this.logger.info(
+      { totalAmount },
+      'Step 1 complete: All products validated',
+    );
 
     // ── Step 2: Reduce stock in Product Service ────────────────────────────
     this.logger.info('Step 2: Reducing stock in Product Service (TCP)');
@@ -87,7 +111,10 @@ export class OrderService {
         throw new Error(msg);
       }
 
-      this.logger.debug({ productId: item.productId, quantity: item.quantity }, 'Stock reduced');
+      this.logger.debug(
+        { productId: item.productId, quantity: item.quantity },
+        'Stock reduced',
+      );
     }
 
     this.logger.info('Step 2 complete: All stock reduced');
@@ -103,10 +130,16 @@ export class OrderService {
     });
 
     const savedOrder = await order.save();
-    this.logger.info({ orderId: savedOrder._id }, 'Step 3 complete: Order saved to MongoDB');
+    this.logger.info(
+      { orderId: savedOrder._id },
+      'Step 3 complete: Order saved to MongoDB',
+    );
 
     // ── Step 4: Publish RabbitMQ event ─────────────────────────────────────
-    this.logger.info({ orderId: savedOrder._id }, 'Step 4: Publishing order.created event to RabbitMQ');
+    this.logger.info(
+      { orderId: savedOrder._id },
+      'Step 4: Publishing order.created event to RabbitMQ',
+    );
 
     const event: OrderCreatedEvent = {
       orderId: String(savedOrder._id),
@@ -118,8 +151,14 @@ export class OrderService {
 
     this.rabbitMQClient.emit(RABBITMQ_QUEUES.ORDER_CREATED, event);
 
-    this.logger.info({ orderId: savedOrder._id }, 'Step 4 complete: order.created event published');
-    this.logger.info({ orderId: savedOrder._id, totalAmount }, '✅ Order creation flow complete');
+    this.logger.info(
+      { orderId: savedOrder._id },
+      'Step 4 complete: order.created event published',
+    );
+    this.logger.info(
+      { orderId: savedOrder._id, totalAmount },
+      '✅ Order creation flow complete',
+    );
 
     return savedOrder;
   }

@@ -18,6 +18,8 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   canActivate(
     context: ExecutionContext,
   ): boolean | Promise<boolean> | import('rxjs').Observable<boolean> {
+    // Check for @Public() decorator on either the handler or controller class.
+    // If found, skip JWT verification entirely — useful for login/register/health routes.
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
@@ -27,6 +29,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       return true;
     }
 
+    // Delegate to passport-jwt strategy to validate the Bearer token
     return super.canActivate(context);
   }
 }

@@ -11,6 +11,12 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 
 import {
   CreateOrderDto,
@@ -21,6 +27,7 @@ import {
   Roles,
 } from '@app/common';
 
+@ApiTags('Orders')
 @Controller('orders')
 export class OrdersController {
   constructor(
@@ -31,6 +38,18 @@ export class OrdersController {
     private readonly logger: PinoLogger,
   ) {}
 
+  @ApiOperation({
+    summary: 'Create an order',
+    description:
+      'Requires user or admin role. Validates stock via Product Service, reduces inventory, saves order, and publishes a RabbitMQ event.',
+  })
+  @ApiResponse({ status: 201, description: 'Order created successfully' })
+  @ApiResponse({
+    status: 400,
+    description: 'Insufficient stock or validation failed',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiBearerAuth('access-token')
   @Roles('user', 'admin')
   @Post()
   async create(@Body() dto: CreateOrderDto) {
@@ -61,6 +80,12 @@ export class OrdersController {
     return response.data;
   }
 
+  @ApiOperation({
+    summary: 'List all orders',
+    description: 'Admin only. Returns all orders.',
+  })
+  @ApiResponse({ status: 200, description: 'List of orders' })
+  @ApiBearerAuth('access-token')
   @Roles('admin')
   @Get()
   async findAll() {
@@ -88,6 +113,13 @@ export class OrdersController {
     return response.data;
   }
 
+  @ApiOperation({
+    summary: 'Get order by ID',
+    description: 'Admin only. Fetches a single order by MongoDB ObjectId.',
+  })
+  @ApiResponse({ status: 200, description: 'Order found' })
+  @ApiResponse({ status: 404, description: 'Order not found' })
+  @ApiBearerAuth('access-token')
   @Roles('admin')
   @Get(':id')
   async findOne(@Param('id') id: string) {

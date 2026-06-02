@@ -17,21 +17,24 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   // Configure the strategy to extract JWT from the Authorization header and verify it using the secret.
   constructor(private readonly configService: ConfigService) {
     super({
+      // Extract JWT from the Authorization: Bearer <token> header
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      // Do NOT accept expired tokens — passport will auto-reject them with 401
       ignoreExpiration: false,
+      // Shared secret used for verification (must match what auth-service uses to sign)
       secretOrKey:
         configService.get<string>('JWT_ACCESS_SECRET') ?? 'fallback-secret',
     });
   }
 
   /**
-   * Passport-jwt has already verified the signature and expiry.
-   * Just shape the payload into request.user.
+   * Called AFTER passport-jwt has verified the token signature and expiry.
+   * Returns what will be attached to request.user for downstream guards/controllers.
+   *
+   * No TCP/DB call needed here — the JWT payload is self-contained and trusted.
+   * In a zero-trust architecture you'd re-validate against auth-service here.
    */
   async validate(payload: { sub: string; email: string; roles: string[] }) {
-    // In a more complex app, we might check the user's roles/permissions here
-    // or fetch additional user info from a database. But for this simple example,
-    // we'll just return the relevant info from the JWT payload.
     return {
       sub: payload.sub,
       email: payload.email,

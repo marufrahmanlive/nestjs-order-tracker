@@ -11,6 +11,12 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 
 import {
   CreateProductDto,
@@ -22,6 +28,7 @@ import {
   Roles,
 } from '@app/common';
 
+@ApiTags('Products')
 @Controller('products')
 export class ProductsController {
   constructor(
@@ -32,6 +39,18 @@ export class ProductsController {
     private readonly logger: PinoLogger,
   ) {}
 
+  @ApiOperation({
+    summary: 'Create a new product',
+    description: 'Admin only. Creates a new product in the catalog.',
+  })
+  @ApiResponse({ status: 201, description: 'Product created successfully' })
+  @ApiResponse({ status: 400, description: 'Validation failed' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized — missing or invalid JWT',
+  })
+  @ApiResponse({ status: 403, description: 'Forbidden — requires admin role' })
+  @ApiBearerAuth('access-token')
   @Roles('admin')
   @Post()
   async create(@Body() dto: CreateProductDto) {
@@ -59,6 +78,11 @@ export class ProductsController {
     return response.data;
   }
 
+  @ApiOperation({
+    summary: 'List all products',
+    description: 'Public endpoint. Returns all products (uses Redis cache).',
+  })
+  @ApiResponse({ status: 200, description: 'List of products' })
   @Public()
   @Get()
   async findAll() {
@@ -83,6 +107,13 @@ export class ProductsController {
     return response.data;
   }
 
+  @ApiOperation({
+    summary: 'Get product by ID',
+    description:
+      'Public endpoint. Fetches a single product by its MongoDB ObjectId.',
+  })
+  @ApiResponse({ status: 200, description: 'Product found' })
+  @ApiResponse({ status: 404, description: 'Product not found' })
   @Public()
   @Get(':id')
   async findOne(@Param('id') id: string) {

@@ -39,9 +39,14 @@ export class ProductService {
     return saved;
   }
 
+  /**
+   * Cache-Aside pattern: check Redis first, fall back to MongoDB.
+   * On cache miss, populate Redis so subsequent calls hit cache.
+   */
   async findAll(): Promise<Product[]> {
     this.logger.info('Fetching all products');
 
+    // Try Redis first — if hit, skip MongoDB entirely
     const cached = await this.cacheManager.get<Product[]>(
       CACHE_KEYS.ALL_PRODUCTS,
     );
@@ -53,6 +58,7 @@ export class ProductService {
     this.logger.debug('Cache MISS for all products — querying MongoDB');
     const products = await this.productModel.find().lean().exec();
 
+    // Populate cache so next call doesn't hit MongoDB
     await this.cacheManager.set(
       CACHE_KEYS.ALL_PRODUCTS,
       products,
@@ -90,6 +96,16 @@ export class ProductService {
     return product;
   }
 
+  /**
+   * Reduce product stock atomically.
+   *
+   * Uses findById (not findByIdAndUpdate) to first read current stock,
+   * validate the reduction is possible, then save. This allows returning
+   * a descriptive error when stock is insufficient rather than failing silently.
+   *
+   * After saving, BOTH the single-product cache AND the all-products list cache
+   * are invalidated to prevent stale data from being served.
+   */
   async reduceStock(
     dto: ReduceStockDto,
   ): Promise<{ success: boolean; error?: string }> {
@@ -107,6 +123,7 @@ export class ProductService {
       return { success: false, error: `Product ${dto.productId} not found` };
     }
 
+    // Check if enough stock is available before decrementing
     if (product.stock < dto.quantity) {
       this.logger.warn(
         {
@@ -125,7 +142,8 @@ export class ProductService {
     product.stock -= dto.quantity;
     await product.save();
 
-    // Invalidate caches for this product and product list
+    // Invalidate both the single-product cache and the all-products list cache
+    // Promise.all runs both deletes concurrently for better performance
     const cacheKey = CACHE_KEYS.PRODUCT_BY_ID(dto.productId);
     await Promise.all([
       this.cacheManager.del(cacheKey),

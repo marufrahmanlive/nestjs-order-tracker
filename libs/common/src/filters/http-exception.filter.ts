@@ -38,7 +38,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     let errors: Record<string, any> | string[] | undefined = undefined;
 
     if (exception instanceof DomainException) {
-      // Application-level domain exception
+      // Application-level domain exception — use the custom code directly
       statusCode = exception.getStatus();
       code = exception.code;
       message = exception.message;
@@ -48,21 +48,24 @@ export class HttpExceptionFilter implements ExceptionFilter {
         `Domain Exception: [${method}] ${path} - ${code}: ${message}`,
       );
     } else if (exception instanceof HttpException) {
-      // NestJS built-in HTTP exceptions
+      // NestJS built-in HTTP exceptions (from guards, pipes, interceptors, etc.)
       statusCode = exception.getStatus();
       const exceptionResponse = exception.getResponse();
 
       if (typeof exceptionResponse === 'string') {
+        // Simple string response (e.g. thrown via new HttpException('msg', 400))
         message = exceptionResponse;
       } else if (
         typeof exceptionResponse === 'object' &&
         exceptionResponse !== null
       ) {
+        // Object response — may contain message, error, statusCode etc.
         const body = exceptionResponse as any;
         message = body.message || exception.message;
         code = body.code || this.statusToErrorCode(statusCode);
 
-        // Handle class-validator validation errors
+        // class-validator throws BadRequestException with message: string[]
+        // We detect this pattern and format them as property→error[] map
         if (body.error === 'Bad Request' && Array.isArray(body.message)) {
           errors = this.formatValidationErrors(body.message);
         } else if (typeof body.error === 'string') {
@@ -71,6 +74,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
           errors = body.errors;
         }
       } else {
+        // Fallback: unknown response shape
         code = this.statusToErrorCode(statusCode);
       }
 
@@ -78,7 +82,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
         `HTTP Exception: [${method}] ${path} - ${statusCode} ${code}: ${message}`,
       );
     } else if (exception instanceof Error) {
-      // Unhandled errors
+      // Unhandled JS errors — log the full stack but NEVER expose it to the client
       statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
       code = ERROR_CODES.INTERNAL_ERROR;
       message = 'An unexpected error occurred';
@@ -87,7 +91,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
         exception.stack,
       );
     } else {
-      // Unknown error type
+      // Completely unknown throw type (e.g. throw 'string' in JS)
       this.logger.error(
         `Unknown Exception Type: [${method}] ${path}`,
         JSON.stringify(exception),

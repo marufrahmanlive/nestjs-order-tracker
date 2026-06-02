@@ -49,6 +49,12 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     AuthService,
     LocalStrategy,
     JwtStrategy,
+    // APP_GUARD is a special NestJS injection token.
+    // Providing guards this way (rather than app.useGlobalGuards() in main.ts)
+    // allows the guards to participate in DI — they can inject Reflector, AuthService, etc.
+    //
+    // ORDER MATTERS: JwtAuthGuard runs first (populates request.user),
+    // then RolesGuard runs second (checks request.user.roles against @Roles() metadata).
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,

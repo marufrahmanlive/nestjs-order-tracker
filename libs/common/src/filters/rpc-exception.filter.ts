@@ -31,7 +31,8 @@ export class RpcExceptionFilter extends BaseRpcExceptionFilter {
     }
 
     if (exception instanceof DomainException) {
-      // Domain exception - extract code and status
+      // Application domain exception — extract code and status, then wrap as RpcException
+      // so the calling service (gateway) gets structured error info, not a raw TCP error
       const status = exception.getStatus();
       const payload = {
         code: exception.code,
@@ -47,7 +48,8 @@ export class RpcExceptionFilter extends BaseRpcExceptionFilter {
     }
 
     if (exception instanceof HttpException) {
-      // HTTP exception - derive code from status
+      // NestJS HTTP exception raised inside a microservice handler (e.g. NotFoundException).
+      // Convert to RpcException so the TCP transport doesn't crash on unknown error format.
       const status = exception.getStatus();
       const response = exception.getResponse();
 
@@ -79,7 +81,7 @@ export class RpcExceptionFilter extends BaseRpcExceptionFilter {
     }
 
     if (exception instanceof Error) {
-      // Known error types
+      // Unexpected JS error — log the full stack but DO NOT expose it in the response
       this.logger.error(
         `Unhandled Error in RPC: ${exception.message}`,
         exception.stack,
@@ -95,7 +97,7 @@ export class RpcExceptionFilter extends BaseRpcExceptionFilter {
       );
     }
 
-    // Unknown error type
+    // Completely unknown error type — serialize and log, then return a safe generic error
     this.logger.error(
       `Unknown Exception Type in RPC`,
       JSON.stringify(exception),

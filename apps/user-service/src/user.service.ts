@@ -44,6 +44,12 @@ export class UserService {
       .exec();
   }
 
+  /**
+   * Soft-delete: marks the user as deleted (deletedAt timestamp + isActive: false)
+   * instead of permanently removing from the database.
+   *
+   * { new: true } returns the updated document rather than the original.
+   */
   async softDelete(id: string): Promise<UserDocument | null> {
     this.logger.log(`Soft deleting user: ${id}`);
     return this.userModel
@@ -55,6 +61,12 @@ export class UserService {
       .exec();
   }
 
+  /**
+   * Paginated user listing.
+   *
+   * find() and countDocuments() run concurrently via Promise.all for performance.
+   * Both filter deletedAt: null to exclude soft-deleted users.
+   */
   async list(skip = 0, limit = 20) {
     this.logger.log(`Listing users (skip: ${skip}, limit: ${limit})`);
     const [items, total] = await Promise.all([

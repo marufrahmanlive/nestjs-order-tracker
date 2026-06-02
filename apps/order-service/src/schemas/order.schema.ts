@@ -4,6 +4,8 @@ import { OrderStatus } from '@app/common';
 
 export type OrderDocument = Order & Document;
 
+// _id: false prevents Mongoose from auto-generating an _id for each sub-document.
+// Order items are embedded, not referenced — they don't need their own IDs.
 @Schema({ _id: false })
 class OrderItem {
   @Prop({ required: true })
@@ -12,6 +14,8 @@ class OrderItem {
   @Prop({ required: true, min: 1 })
   quantity: number;
 
+  // unitPrice is captured at order creation time so the order retains a true
+  // record of what was charged, even if the product price changes later.
   @Prop({ required: true, min: 0 })
   unitPrice: number;
 }

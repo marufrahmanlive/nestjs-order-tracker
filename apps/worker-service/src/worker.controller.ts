@@ -20,6 +20,7 @@ export class WorkerController {
     @Payload() event: OrderCreatedEvent,
     @Ctx() context: RmqContext,
   ) {
+    // Extract RabbitMQ channel and message for manual acknowledgment
     const channel = context.getChannelRef();
     const originalMsg = context.getMessage();
 
@@ -31,7 +32,8 @@ export class WorkerController {
     try {
       await this.workerService.processOrderCreated(event);
 
-      // Acknowledge message after successful processing
+      // Manual ACK — tells RabbitMQ the message was processed successfully
+      // Required because noAck: false in main.ts (manual acknowledgment mode)
       channel.ack(originalMsg);
       this.logger.info({ orderId: event.orderId }, '✅ Message acknowledged');
     } catch (error) {
@@ -40,8 +42,10 @@ export class WorkerController {
         '❌ Error processing order.created event — rejecting message (requeue: false)',
       );
 
-      // Reject without requeue to avoid infinite loops
-      // In production: send to a Dead Letter Queue (DLQ)
+      // nack(originalMsg, false, false):
+      //   - 2nd param false: do NOT re-queue (re-queueing would cause infinite loops on persistent errors)
+      //   - 3rd param false: only reject this single message
+      // In production: the rejected message should be routed to a Dead Letter Queue (DLQ) for manual review
       channel.nack(originalMsg, false, false);
     }
   }

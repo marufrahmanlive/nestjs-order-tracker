@@ -8,6 +8,9 @@ export class User {
   @Prop({ required: true, unique: true, lowercase: true, index: true })
   email: string;
 
+  // select: false means password is NEVER included in query results by default.
+  // Must use .select('+password') explicitly when bcrypt.compare needs the hash.
+  // This prevents accidental password leaks in API responses.
   @Prop({ required: true, select: false })
   password: string;
 
@@ -20,6 +23,9 @@ export class User {
   @Prop({ default: true })
   isActive: boolean;
 
+  // Soft-delete: users are marked deleted (deletedAt + isActive: false)
+  // rather than being permanently removed from the database.
+  // Queries should always filter deletedAt: null for active users.
   @Prop({ type: Date, default: null, index: true })
   deletedAt: Date | null;
 }

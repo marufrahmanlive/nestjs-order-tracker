@@ -78,8 +78,12 @@ export class AuthService {
       roles: user.roles,
     };
 
+    // Access token: short-lived, used for API authorization
     const accessToken = this.jwtService.sign(payload);
 
+    // Refresh token: long-lived, signed with a DIFFERENT secret to prevent
+    // refresh tokens being usable as access tokens (even though they have a 'type' claim,
+    // separate secrets adds defense-in-depth)
     const refreshToken = this.jwtService.sign(
       { sub: payload.sub, type: 'refresh' },
       {
@@ -91,7 +95,7 @@ export class AuthService {
     return {
       accessToken,
       refreshToken,
-      expiresIn: 900, // 15 minutes in seconds
+      expiresIn: 900, // 15 minutes in seconds — frontend can use this to schedule silent refresh
       user: this.sanitizeUser(user),
     };
   }
@@ -167,6 +171,14 @@ export class AuthService {
   // User validation (used by LocalStrategy via TCP)
   // ───────────────────────────────────────────────────────────────────────────
 
+  /**
+   * Validate raw email/password credentials.
+   *
+   * `.select('+password')` is critical: the User schema has `select: false`
+   * on the password field, so it's excluded by default. The `+` prefix temporarily
+   * includes it so bcrypt can compare the hash. Without this, user.password would
+   * be undefined and login would always fail.
+   */
   async validateUser(
     email: string,
     password: string,
