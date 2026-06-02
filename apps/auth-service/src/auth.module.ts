@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { JwtModule } from '@nestjs/jwt';
 import { LoggerModule } from 'nestjs-pino';
 
 import { AuthController } from './auth.controller';
@@ -19,6 +20,19 @@ import { User, UserSchema } from './schemas/user.schema';
             ? { target: 'pino-pretty', options: { colorize: true } }
             : undefined,
       },
+    }),
+
+    JwtModule.registerAsync({
+      useFactory: (config: ConfigService) =>
+        ({
+          secret: config.get<string>('JWT_ACCESS_SECRET'),
+          signOptions: {
+            expiresIn: config.get<string>('JWT_ACCESS_EXPIRY', '15m'),
+            issuer: 'order-tracker-auth',
+            audience: 'order-tracker-client',
+          },
+        }) as any,
+      inject: [ConfigService],
     }),
 
     MongooseModule.forRootAsync({

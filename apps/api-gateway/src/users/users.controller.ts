@@ -22,6 +22,7 @@ import {
   SERVICES,
   ServiceResponse,
   IUser,
+  Roles,
 } from '@app/common';
 
 @Controller('users')
@@ -34,6 +35,7 @@ export class UsersController {
     private readonly logger: PinoLogger,
   ) {}
 
+  @Roles('admin')
   @Post()
   async create(@Body() dto: CreateUserDto) {
     this.logger.info(
@@ -63,6 +65,7 @@ export class UsersController {
     return response.data;
   }
 
+  @Roles('admin')
   @Get()
   async findAll(@Query('skip') skip?: string, @Query('limit') limit?: string) {
     this.logger.info('GET /users — forwarding to User Service via TCP');
@@ -99,6 +102,7 @@ export class UsersController {
     return response.data;
   }
 
+  @Roles('admin')
   @Get(':id')
   async findOne(@Param('id') id: string) {
     this.logger.info(
@@ -124,6 +128,7 @@ export class UsersController {
     return response.data;
   }
 
+  @Roles('admin')
   @Patch(':id')
   async update(@Param('id') id: string, @Body() updates: UpdateUserDto) {
     this.logger.info(
@@ -149,6 +154,7 @@ export class UsersController {
     return response.data;
   }
 
+  @Roles('admin')
   @Delete(':id')
   async softDelete(@Param('id') id: string) {
     this.logger.info(

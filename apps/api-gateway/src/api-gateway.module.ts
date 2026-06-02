@@ -6,9 +6,8 @@ import { LoggerModule } from 'nestjs-pino';
 import { SERVICES } from '@app/common';
 import { ProductsController } from './products/products.controller';
 import { OrdersController } from './orders/orders.controller';
-import { AuthController } from './auth/auth.controller';
 import { UsersController } from './users/users.controller';
-import { AuthService } from './auth/auth.service';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -42,6 +41,10 @@ import { AuthService } from './auth/auth.service';
       },
     }),
 
+    // Auth module — brings PassportModule, JwtModule, strategies, guards
+    // Also includes its own TCP client for AUTH_SERVICE
+    AuthModule,
+
     // TCP client for Product Service
     ClientsModule.registerAsync([
       {
@@ -72,21 +75,6 @@ import { AuthService } from './auth/auth.service';
       },
     ]),
 
-    // TCP client for Auth Service
-    ClientsModule.registerAsync([
-      {
-        name: SERVICES.AUTH,
-        useFactory: (config: ConfigService) => ({
-          transport: Transport.TCP,
-          options: {
-            host: config.get<string>('AUTH_SERVICE_HOST', 'localhost'),
-            port: config.get<number>('AUTH_SERVICE_PORT', 3003),
-          },
-        }),
-        inject: [ConfigService],
-      },
-    ]),
-
     // TCP client for User Service
     ClientsModule.registerAsync([
       {
@@ -102,12 +90,6 @@ import { AuthService } from './auth/auth.service';
       },
     ]),
   ],
-  controllers: [
-    ProductsController,
-    OrdersController,
-    AuthController,
-    UsersController,
-  ],
-  providers: [AuthService],
+  controllers: [ProductsController, OrdersController, UsersController],
 })
 export class ApiGatewayModule {}

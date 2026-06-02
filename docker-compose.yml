@@ -11,7 +11,7 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: rootpassword
       MONGO_INITDB_DATABASE: order_tracker
     ports:
-      - '27018:27017'
+      - '27017:27017'
     volumes:
       - mongo_data:/data/db
     networks:
@@ -27,7 +27,7 @@ services:
     container_name: order-tracker-redis
     restart: unless-stopped
     ports:
-      - '6380:6379'
+      - '6379:6379'
     volumes:
       - redis_data:/data
     networks:
@@ -47,8 +47,8 @@ services:
       RABBITMQ_DEFAULT_PASS: guest
       RABBITMQ_DEFAULT_VHOST: /
     ports:
-      - '5673:5672'
-      - '15673:15672'
+      - '5672:5672'
+      - '15672:15672'
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     networks:
@@ -73,6 +73,8 @@ services:
       AUTH_SERVICE_HOST: 0.0.0.0
       AUTH_SERVICE_PORT: 3003
       MONGODB_URI: mongodb://root:rootpassword@mongodb:27017/order_tracker?authSource=admin
+      JWT_ACCESS_SECRET: order-tracker-jwt-access-secret-2026
+      JWT_REFRESH_SECRET: order-tracker-jwt-refresh-secret-2026
     ports:
       - '3003:3003'
     networks:
@@ -181,6 +183,8 @@ services:
       AUTH_SERVICE_PORT: 3003
       USER_SERVICE_HOST: user-service
       USER_SERVICE_PORT: 3004
+      JWT_ACCESS_SECRET: order-tracker-jwt-access-secret-2026
+      JWT_REFRESH_SECRET: order-tracker-jwt-refresh-secret-2026
     ports:
       - '3000:3000'
     networks:

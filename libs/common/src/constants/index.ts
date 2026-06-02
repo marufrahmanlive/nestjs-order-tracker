@@ -18,6 +18,7 @@ export const AUTH_PATTERNS = {
   VALIDATE_USER: 'auth.validateUser',
   FIND_BY_ID: 'auth.findById',
   FIND_BY_EMAIL: 'auth.findByEmail',
+  REFRESH_TOKEN: 'auth.refreshToken',
 } as const;
 
 export const USER_PATTERNS = {
@@ -63,3 +64,4 @@ export const CACHE_TTL = {
 
 // ─── Error Codes ─────────────────────────────────────────────────────────────
 export * from './error-codes.constants';
+export * from './auth.constants';

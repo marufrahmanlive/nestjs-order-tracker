@@ -1,4 +1,13 @@
-import { IsEmail, IsString, MinLength, MaxLength } from 'class-validator';
+import {
+  IsEmail,
+  IsString,
+  MinLength,
+  MaxLength,
+  IsJWT,
+  IsNumber,
+  IsObject,
+} from 'class-validator';
+import type { IUser } from '../interfaces';
 
 export class LoginDto {
   @IsEmail()
@@ -31,4 +40,23 @@ export class ValidateUserDto {
   @IsString()
   @MinLength(1)
   password!: string;
+}
+
+export class RefreshTokenDto {
+  @IsJWT()
+  refreshToken!: string;
+}
+
+export class LoginResponseDto {
+  @IsJWT()
+  accessToken!: string;
+
+  @IsJWT()
+  refreshToken!: string;
+
+  @IsNumber()
+  expiresIn!: number;
+
+  @IsObject()
+  user!: IUser;
 }
