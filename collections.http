@@ -1,0 +1,185 @@
+# ─── Base URL: http://localhost:3000/api/v1 ─────────────────────────────────
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# AUTH Endpoints
+# ═══════════════════════════════════════════════════════════════════════════════
+
+### Auth — Register a new user
+POST http://localhost:3000/api/v1/auth/register
+content-type: application/json
+
+{
+  "email": "maruf@gmail.com",
+  "password": "12345678",
+  "name": "Maruf Rahman"
+}
+
+###
+
+### Auth — Login (returns JWT token and user data)
+POST http://localhost:3000/api/v1/auth/login
+content-type: application/json
+
+{
+  "email": "maruf@gmail.com",
+  "password": "12345678"
+}
+
+###
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# USERS Endpoints
+# ═══════════════════════════════════════════════════════════════════════════════
+
+### Users — Create a new user (with optional roles)
+POST http://localhost:3000/api/v1/users
+content-type: application/json
+
+{
+  "email": "john.doe@example.com",
+  "name": "John Doe",
+  "password": "securePass123",
+  "roles": ["customer"]
+}
+
+###
+
+### Users — Create a user without roles (roles defaults to undefined)
+POST http://localhost:3000/api/v1/users
+content-type: application/json
+
+{
+  "email": "jane.doe@example.com",
+  "name": "Jane Doe",
+  "password": "securePass456"
+}
+
+###
+
+### Users — Get all users (default pagination: skip=0, limit=20)
+GET http://localhost:3000/api/v1/users
+
+###
+
+### Users — Get all users with pagination
+GET http://localhost:3000/api/v1/users?skip=0&limit=10
+
+###
+
+### Users — Get a single user by ID
+# Replace {{userId}} with an actual MongoDB _id from a previous response
+GET http://localhost:3000/api/v1/users/{{userId}}
+
+###
+
+### Users — Update a user (partial update)
+# Replace {{userId}} with an actual MongoDB _id
+PATCH http://localhost:3000/api/v1/users/{{userId}}
+content-type: application/json
+
+{
+  "name": "John Updated",
+  "isActive": true
+}
+
+###
+
+### Users — Soft-delete a user (marks as inactive instead of hard delete)
+# Replace {{userId}} with an actual MongoDB _id
+DELETE http://localhost:3000/api/v1/users/{{userId}}
+
+###
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PRODUCTS Endpoints
+# ═══════════════════════════════════════════════════════════════════════════════
+
+### Products — Create a new product
+POST http://localhost:3000/api/v1/products
+content-type: application/json
+
+{
+  "name": "Wireless Mouse",
+  "description": "Ergonomic wireless mouse with USB-C charging",
+  "price": 29.99,
+  "stock": 150
+}
+
+###
+
+### Products — Create another product
+POST http://localhost:3000/api/v1/products
+content-type: application/json
+
+{
+  "name": "Mechanical Keyboard",
+  "description": "Full-size mechanical keyboard with Cherry MX Blue switches",
+  "price": 89.99,
+  "stock": 75
+}
+
+###
+
+### Products — Get all products
+GET http://localhost:3000/api/v1/products
+
+###
+
+### Products — Get a single product by ID
+# Replace {{productId}} with an actual MongoDB _id from a previous response
+GET http://localhost:3000/api/v1/products/{{productId}}
+
+###
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ORDERS Endpoints
+# ═══════════════════════════════════════════════════════════════════════════════
+
+### Orders — Create a new order
+# Replace {{customerId}} and {{productId}} with actual IDs from user & product responses
+POST http://localhost:3000/api/v1/orders
+content-type: application/json
+
+{
+  "customerId": "{{customerId}}",
+  "items": [
+    {
+      "productId": "{{productId}}",
+      "quantity": 2
+    }
+  ]
+}
+
+###
+
+### Orders — Create an order with multiple items
+# Replace {{customerId}} and {{productId}} with actual IDs
+POST http://localhost:3000/api/v1/orders
+content-type: application/json
+
+{
+  "customerId": "{{customerId}}",
+  "items": [
+    {
+      "productId": "{{productId}}",
+      "quantity": 1
+    },
+    {
+      "productId": "{{productId2}}",
+      "quantity": 3
+    }
+  ]
+}
+
+###
+
+### Orders — Get all orders
+GET http://localhost:3000/api/v1/orders
+
+###
+
+### Orders — Get a single order by ID
+# Replace {{orderId}} with an actual MongoDB _id
+GET http://localhost:3000/api/v1/orders/{{orderId}}
+
+###

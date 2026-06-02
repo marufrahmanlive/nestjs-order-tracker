@@ -8,6 +8,7 @@ import { ProductsController } from './products/products.controller';
 import { OrdersController } from './orders/orders.controller';
 import { AuthController } from './auth/auth.controller';
 import { UsersController } from './users/users.controller';
+import { AuthService } from './auth/auth.service';
 
 @Module({
   imports: [
@@ -107,5 +108,6 @@ import { UsersController } from './users/users.controller';
     AuthController,
     UsersController,
   ],
+  providers: [AuthService],
 })
 export class ApiGatewayModule {}
